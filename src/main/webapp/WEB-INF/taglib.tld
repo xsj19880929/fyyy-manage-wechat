@@ -1,0 +1,57 @@
+<taglib xmlns="http://java.sun.com/xml/ns/j2ee"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee
+http://java.sun.com/xml/ns/j2ee/web-jsptaglibrary_2_0.xsd"
+version="2.0">
+	<tlib-version>1.0</tlib-version>
+	<short-name>page</short-name>
+	<uri>http://suryani.cn/support/tags</uri>
+	<tag>
+		<description>View tag</description>
+		<display-name>view</display-name>
+		<name>view</name>
+		<tag-class>com.suryani.weixin.admin.common.tags.View</tag-class>
+		<body-content>empty</body-content>
+		<attribute>
+			<name>page</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>cached</name>
+		</attribute>
+		<dynamic-attributes>true</dynamic-attributes>
+	</tag>
+	<tag>
+		<description>Pagination tag</description>
+		<display-name>page</display-name>
+		<name>page</name>
+		<tag-class>com.suryani.weixin.admin.common.tags.Pagination</tag-class>
+		<body-content>empty</body-content>
+		<attribute>
+			<name>url</name>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>offset</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>fetchSize</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>total</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+	</tag>
+	<tag-file>
+		<description>util tag</description>
+		<path>/WEB-INF/tags/phone.tag</path>
+		<display-name>util</display-name>
+		<name>phone</name>
+	</tag-file>
+</taglib>

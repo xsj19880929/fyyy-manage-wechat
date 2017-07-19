@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<configuration>
+	<appender name="info" class="ch.qos.logback.core.ConsoleAppender">
+		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>INFO</level>
+		</filter>
+		<encoder class="com.quidsi.core.log.FilterMessagePatternLayoutEncoder">
+			<pattern>%d [%thread] %-5level %logger{36} - %msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<appender name="trace" class="com.quidsi.core.log.TraceAppender">
+		<layout class="com.quidsi.core.log.FilterMessagePatternLayout">
+			<pattern>%d [%thread] %-5level %logger{36} - %msg%n</pattern>
+		</layout>
+		<!-- <logFolder>C:/logs/wx-platform</logFolder> -->
+		<!-- <logFolder>/home/ec2-user/logs/wx-platform-admin</logFolder> -->
+	</appender>
+
+	<appender name="action" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder class="com.quidsi.core.log.FilterMessagePatternLayoutEncoder">
+			<pattern>%message%n</pattern>
+		</encoder>
+	</appender>
+	
+	<appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>/home/ec2-user/logs/wx-platform-admin.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>wx-platform-admin.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [error-trace] [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+	<logger name="com.quidsi.core.log.ActionLogger" additivity="false"
+		level="INFO">
+		<appender-ref ref="action" />
+	</logger>
+
+	<logger name="org.springframework" level="INFO" />
+	<logger name="org.apache.http" level="INFO" />
+	<logger name="org.hibernate" level="INFO" />
+
+	<root level="debug">
+		<appender-ref ref="info" />
+		<appender-ref ref="trace" />
+		<appender-ref ref="FILE" />
+	</root>
+</configuration>

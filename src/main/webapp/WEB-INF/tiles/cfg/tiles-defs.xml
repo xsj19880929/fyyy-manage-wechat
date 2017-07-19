@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE tiles-definitions PUBLIC
+       "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN"
+       "tiles-config_3_0.dtd">
+
+<!-- Definitions for Tiles documentation   -->
+
+<tiles-definitions>
+
+  <!-- =======================================================  -->
+  <!-- Master definition  									-->
+  <!-- =======================================================  -->
+
+  <!-- Doc index page description  -->
+  <definition name="frame" template="/WEB-INF/tiles/frm/frame.jsp" />
+  <definition name="ctn-frame" extends="frame">
+    <put-attribute name="body" value="/WEB-INF/tiles/frm/in-frame.jsp"/> 
+  </definition>
+  <definition name="sys.*" extends="frame">
+      <put-attribute name="body" value="/WEB-INF/tiles/{1}.jsp" />     
+  </definition>
+  <definition name="common.*.*" extends="ctn-frame">
+      <put-attribute name="body" value="/WEB-INF/tiles/{1}/{2}.jsp" cascade="true" />     
+  </definition>
+</tiles-definitions>
