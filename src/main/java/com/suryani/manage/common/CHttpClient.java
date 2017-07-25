@@ -42,7 +42,7 @@ public class CHttpClient {
             builder.setDefaultSocketConfig(SocketConfig.custom()
                     .setSoKeepAlive(true).build());
             builder.setDefaultRequestConfig(RequestConfig.custom()
-                    .setSocketTimeout(10000)
+                    .setSocketTimeout(20000)
                     .setConnectTimeout(10000)
                     .setConnectionRequestTimeout(1000)
                     .build());
