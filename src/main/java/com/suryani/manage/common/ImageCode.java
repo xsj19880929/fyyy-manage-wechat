@@ -256,7 +256,7 @@ public class ImageCode {
 
     public static int isInterfereRGB(int colorInt) {
         Color color = new Color(colorInt);
-        if (color.getRGB() == -16712192 || color.getRGB() == -16711936 || color.getRGB() == -16777216 || color.getRGB() == -285497 || color.getRGB() == -5464839 || color.getRGB() == -5641028 || color.getRGB() == -3557656 || color.getRGB() == -1250824 || color.getRGB() == -3494729 || color.getRGB() == -2576392 || color.getRGB() == -1) {
+        if (color.getRGB() == -16776961 || color.getRGB() == -16712192 || color.getRGB() == -16711936 || color.getRGB() == -16777216 || color.getRGB() == -285497 || color.getRGB() == -5464839 || color.getRGB() == -5641028 || color.getRGB() == -3557656 || color.getRGB() == -1250824 || color.getRGB() == -3494729 || color.getRGB() == -2576392 || color.getRGB() == -1) {
             return 1;
         }
         return 0;
@@ -321,10 +321,18 @@ public class ImageCode {
             markWidthList.add(saveBetween.get("index") + 2, middle + 1);
         }
 //        System.out.println(JSONBinder.toJSON(markWidthList));
-        subImageList.add(splitHeightImage(img.getSubimage(markWidthList.get(0), 0, markWidthList.get(1) - markWidthList.get(0), height)));
-        subImageList.add(splitHeightImage(img.getSubimage(markWidthList.get(2), 0, markWidthList.get(3) - markWidthList.get(2), height)));
-        subImageList.add(splitHeightImage(img.getSubimage(markWidthList.get(4), 0, markWidthList.get(5) - markWidthList.get(4), height)));
-        subImageList.add(splitHeightImage(img.getSubimage(markWidthList.get(6), 0, markWidthList.get(7) - markWidthList.get(6), height)));
+        BufferedImage img1 = splitHeightImage(img.getSubimage(markWidthList.get(0), 0, markWidthList.get(1) - markWidthList.get(0), height));
+        BufferedImage img2 = splitHeightImage(img.getSubimage(markWidthList.get(2), 0, markWidthList.get(3) - markWidthList.get(2), height));
+        BufferedImage img3 = splitHeightImage(img.getSubimage(markWidthList.get(4), 0, markWidthList.get(5) - markWidthList.get(4), height));
+        BufferedImage img4 = splitHeightImage(img.getSubimage(markWidthList.get(6), 0, markWidthList.get(7) - markWidthList.get(6), height));
+//        ImageIO.write(img1, "png", new File("D:\\验证码\\qie\\" + System.currentTimeMillis() + ".png"));
+//        ImageIO.write(img2, "png", new File("D:\\验证码\\qie\\" + System.currentTimeMillis() + ".png"));
+//        ImageIO.write(img3, "png", new File("D:\\验证码\\qie\\" + System.currentTimeMillis() + ".png"));
+//        ImageIO.write(img4, "png", new File("D:\\验证码\\qie\\" + System.currentTimeMillis() + ".png"));
+        subImageList.add(img1);
+        subImageList.add(img2);
+        subImageList.add(img3);
+        subImageList.add(img4);
         return subImageList;
 
 
@@ -400,7 +408,9 @@ public class ImageCode {
             }
         }
 //        System.out.println(JSONBinder.toJSON(markHeightList));
-        return img.getSubimage(0, markHeightList.get(0), width, markHeightList.get(markHeightList.size() - 1) - markHeightList.get(0));
+        BufferedImage img2 = img.getSubimage(0, markHeightList.get(0), width, markHeightList.get(markHeightList.size() - 1) - markHeightList.get(0));
+//        ImageIO.write(img2, "png", new File("D:\\验证码\\qie\\" + System.currentTimeMillis() + ".png"));
+        return img2;
 
     }
 
@@ -482,12 +492,14 @@ public class ImageCode {
             int height = img.getHeight();
             int temp = 0;
             for (BufferedImage bi : map.keySet()) {
+                List<Map.Entry<Integer, Integer>> arrayList = getTopRgb(img);
+                List<Map.Entry<Integer, Integer>> arrayList2 = getTopRgb(bi);
                 int count = 0;
                 int biWidth = bi.getWidth();
                 int biHeight = bi.getHeight();
                 for (int x = 0; x < width; x++) {
                     for (int y = 0; y < height; y++) {
-                        if (y < biHeight && x < biWidth && isBlack(img.getRGB(x, y)) == isBlack(bi.getRGB(x, y))) {
+                        if (y < biHeight && x < biWidth && isWhite(bi.getRGB(x, y)) == 0 && isWhite(img.getRGB(x, y)) == 0) {
                             count++;
                         }
 

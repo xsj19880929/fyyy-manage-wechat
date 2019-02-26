@@ -4,12 +4,20 @@ import com.quidsi.core.platform.web.rest.RESTController;
 import com.quidsi.core.util.StringUtils;
 import com.suryani.manage.booking.domain.Booking;
 import com.suryani.manage.booking.service.BookingService;
+import com.suryani.manage.common.CHttpClient;
 import com.suryani.manage.schedule.service.BookingDoctorNewService;
 import com.suryani.manage.schedule.service.BookingDoctorOperatingNewService;
+import com.suryani.manage.schedule.service.HospitalRegisterService;
 import com.suryani.manage.schedule.service.RegisterBean;
+import com.suryani.manage.schedule.service.RegisterBeanSwitch;
 import com.suryani.manage.util.AjaxHelper;
 import com.suryani.manage.util.CalendarUtils;
 import com.suryani.manage.util.Utils;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.methods.RequestBuilder;
+import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.util.EntityUtils;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -34,6 +42,10 @@ public class BookingAjaxController extends RESTController {
     private BookingDoctorOperatingNewService bookingDoctorOperatingNewService;
     @Inject
     private BookingDoctorNewService bookingDoctorNewService;
+    @Inject
+    private CHttpClient cHttpClient;
+    @Inject
+    private HospitalRegisterService hospitalRegisterService;
 
     @RequestMapping(value = "/list")
     @ResponseBody
@@ -100,12 +112,41 @@ public class BookingAjaxController extends RESTController {
 
     }
 
+    //    @RequestMapping(value = "/queryBooking", method = RequestMethod.POST)
+//    @ResponseBody
+//    public Map<String, Object> queryBooking(@RequestParam("id") String id) {
+//        Booking booking = bookingService.getById(id);
+//        String msg = bookingDoctorOperatingNewService.queryBookingDoctor(booking.getIcardid());
+//        return AjaxHelper.success(msg);
+//
+//    }
     @RequestMapping(value = "/queryBooking", method = RequestMethod.POST)
     @ResponseBody
     public Map<String, Object> queryBooking(@RequestParam("id") String id) {
+
         Booking booking = bookingService.getById(id);
-        String msg = bookingDoctorOperatingNewService.queryBookingDoctor(booking.getIcardid());
-        return AjaxHelper.success(msg);
+        RegisterBean registerBean = RegisterBeanSwitch.switchBean(booking);
+        HttpClientContext clientContext = null;
+        String responseStr = "";
+        try {
+            clientContext = HttpClientContext.create();
+//            hospitalRegisterService.index(registerBean, clientContext);
+            hospitalRegisterService.login(registerBean, clientContext);
+            HttpUriRequest request = RequestBuilder.post()
+                    .setUri("http://wechat.xmsmjk.com/zycapwxsehr/MyReservedController/myReservedData.do")
+                    .setHeader("Host", "wechat.xmsmjk.com")
+                    .setHeader("Referer", "http://wechat.xmsmjk.com/zycapwxsehr/view/appointment/confirm.jsp")
+                    .setHeader("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 5_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Mobile/9B176 MicroMessenger/4.3.2")
+                    .setHeader("Oid", booking.getOpenId())
+                    .addParameter("openid", booking.getOpenId())
+                    .build();
+            HttpResponse httpResponse = cHttpClient.execute(request, clientContext);
+            responseStr = EntityUtils.toString(httpResponse.getEntity());
+            request.abort();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return AjaxHelper.success(responseStr);
 
     }
 

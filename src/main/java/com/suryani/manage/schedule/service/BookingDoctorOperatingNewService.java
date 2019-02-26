@@ -82,24 +82,23 @@ public class BookingDoctorOperatingNewService {
         try {
             RegisterBean registerBean = RegisterBeanSwitch.switchBean(booking);
             HttpClientContext clientContext = HttpClientContext.create();
-            hospitalRegisterService.index(registerBean, clientContext);
-            Map<String, Object> resultMap = hospitalRegisterService.login(registerBean, clientContext);
-            if (resultMap.get("resultData").toString().contains("没有通过身份验证")) {
-                return resultMap.get("resultData").toString();
-            }
+            Map<String, Object> resultMap = hospitalRegisterService.getSsid(registerBean, clientContext);
             List<DateTime> newTimesOne = Utils.sortList(timeListNew(registerBean, clientContext), Integer.parseInt(booking.getSelectTime().replace(":", "")));
             if (newTimesOne != null && !newTimesOne.isEmpty()) {
                 booking.setSelectTime(newTimesOne.get(0).getSelectTime());
                 registerBean = RegisterBeanSwitch.switchBean(booking);
                 registerBean.setTimeCode(newTimesOne.get(0).getTimeCode());
+                registerBean.setNumberId(newTimesOne.get(0).getNumberId());
+                registerBean.setScheduleId(newTimesOne.get(0).getScheduleId());
                 logger.info("=================================预约时间：" + newTimesOne.get(0).getSelectTime());
             } else {
                 return "还没有放号";
             }
-            registerBean.setSsid(resultMap.get("patientSsid").toString());
-            registerBean.setPatientID(resultMap.get("patientID").toString());
-            registerBean.setPatientPhone(resultMap.get("patientPhone").toString());
-            registerBean.setPatientSex(resultMap.get("patientSex").toString());
+            registerBean.setSsid(resultMap.get("ssid").toString());
+            registerBean.setPatientID(resultMap.get("idno").toString());
+            registerBean.setPatientPhone(resultMap.get("telphone").toString());
+            registerBean.setTelPhone(resultMap.get("telphone").toString());
+            registerBean.setPatientSex(resultMap.get("sex").toString());
             responseString = hospitalRegisterService.handDoRegister(registerBean, clientContext);
             logger.info(responseString);
         } catch (Exception e) {
@@ -120,7 +119,9 @@ public class BookingDoctorOperatingNewService {
                     if ("0".equals(dateMap.get("@used").toString()) && !"0".equals(dateMap.get("@max").toString())) {
                         DateTime dateTime = new DateTime();
                         dateTime.setSelectTime(CalendarUtils.format(CalendarUtils.parse(dateMap.get("@start_time").toString(), "yyyy/MM/dd HH:mm:ss"), "HH:mm"));
-                        dateTime.setTimeCode(dateMap.get("@time_code").toString());
+                        dateTime.setTimeCode(dateMap.get("@time_Code").toString());
+                        dateTime.setScheduleId(dateMap.get("@scheduleId").toString());
+                        dateTime.setNumberId(dateMap.get("@numberId").toString());
                         times.add(dateTime);
                     }
 

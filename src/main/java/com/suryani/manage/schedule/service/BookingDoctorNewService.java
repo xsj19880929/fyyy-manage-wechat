@@ -126,12 +126,12 @@ public class BookingDoctorNewService {
         while (i < 3) {
             try {
                 clientContext = HttpClientContext.create();
-                hospitalRegisterService.index(registerBean, clientContext);
-                resultMap = hospitalRegisterService.login(registerBean, clientContext);
-                registerBean.setSsid(resultMap.get("patientSsid").toString());
-                registerBean.setPatientID(resultMap.get("patientID").toString());
-                registerBean.setPatientPhone(resultMap.get("patientPhone").toString());
-                registerBean.setPatientSex(resultMap.get("patientSex").toString());
+//                hospitalRegisterService.index(registerBean, clientContext);
+                resultMap = hospitalRegisterService.getSsid(registerBean, clientContext);
+                registerBean.setSsid(resultMap.get("ssid").toString());
+                registerBean.setPatientID(resultMap.get("idno").toString());
+                registerBean.setPatientPhone(resultMap.get("telphone").toString());
+                registerBean.setPatientSex(resultMap.get("sex").toString());
                 logger.info(registerBean.getPatientName() + "登陆成功");
                 break;
             } catch (Exception e) {

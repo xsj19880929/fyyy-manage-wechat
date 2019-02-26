@@ -29,6 +29,7 @@ public class RegisterBean {
     private String startDate;
     private String endDate;
     private String timeCode;
+    private String telPhone;
 
     public String getTimeCode() {
         return timeCode;
@@ -228,5 +229,13 @@ public class RegisterBean {
 
     public void setIptCode(String iptCode) {
         this.iptCode = iptCode;
+    }
+
+    public String getTelPhone() {
+        return telPhone;
+    }
+
+    public void setTelPhone(String telPhone) {
+        this.telPhone = telPhone;
     }
 }

@@ -13,6 +13,8 @@ public class DateTime {
     private String doctorId;
     private String selectDate;
     private String timeCode;
+    private String numberId;
+    private String scheduleId;
     @Transient
     private int abs;
     @Transient
@@ -82,4 +84,19 @@ public class DateTime {
         this.selectDate = selectDate;
     }
 
+    public String getNumberId() {
+        return numberId;
+    }
+
+    public void setNumberId(String numberId) {
+        this.numberId = numberId;
+    }
+
+    public String getScheduleId() {
+        return scheduleId;
+    }
+
+    public void setScheduleId(String scheduleId) {
+        this.scheduleId = scheduleId;
+    }
 }

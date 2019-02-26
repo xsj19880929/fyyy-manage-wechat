@@ -5,13 +5,13 @@ import com.quidsi.core.json.JSONBinder;
 import com.suryani.manage.common.CHttpClient;
 import com.suryani.manage.common.ImageCode;
 import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.conn.HttpHostConnectException;
-import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +20,8 @@ import org.springframework.stereotype.Service;
 import javax.inject.Inject;
 import java.io.InputStream;
 import java.net.SocketTimeoutException;
-import java.util.ArrayList;
+import java.nio.charset.Charset;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -35,6 +36,39 @@ public class HospitalRegisterService {
     @Inject
     CHttpClient cHttpClient;
 
+    public static void main(String[] args) {
+        String out = "天吧算紧";
+        try {
+            String s = new String(out.getBytes(), "UTF-8");
+            System.out.println(s);
+            System.out.println(new String(s.getBytes(), "GBK"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public CookieStore setCookieStore(HttpResponse httpResponse, String host) {
+        CookieStore cookieStore = new BasicCookieStore();
+        // JSESSIONID
+        if (null == httpResponse.getFirstHeader("Set-Cookie")) {
+            // 新建一个Cookie
+            BasicClientCookie cookie = new BasicClientCookie("JSESSIONID", System.currentTimeMillis() + "");
+            cookie.setVersion(0);
+            cookie.setDomain(host);
+            cookie.setPath("/");
+            cookieStore.addCookie(cookie);
+        } else {
+            String setCookie = httpResponse.getFirstHeader("Set-Cookie").getValue();
+            String JSESSIONID = setCookie.substring("JSESSIONID=".length(), setCookie.indexOf(";"));
+            // 新建一个Cookie
+            BasicClientCookie cookie = new BasicClientCookie("JSESSIONID", JSESSIONID);
+            cookie.setVersion(0);
+            cookie.setDomain(host);
+            cookie.setPath("/");
+            cookieStore.addCookie(cookie);
+        }
+        return cookieStore;
+    }
 
     public void index(RegisterBean registerBean, HttpClientContext clientContext) throws Exception {
         HttpUriRequest request = RequestBuilder.get()
@@ -48,11 +82,13 @@ public class HospitalRegisterService {
     public Map<String, Object> login(RegisterBean registerBean, HttpClientContext clientContext) throws Exception {
 //        logger.info("登陆网站");
         HttpUriRequest request = RequestBuilder.post()
-                .setUri("http://wechat.xmsmjk.com/zycapwxsehr/ReservationLogController/toConfirm.do")
+                .setUri("http://wechat.xmsmjk.com/wechatsehr/v1/bindingController/passwordValidation")
                 .setHeader("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 5_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Mobile/9B176 MicroMessenger/4.3.2")
                 .setHeader("Oid", registerBean.getOpenID())
-                .addParameter("idno", registerBean.getIdNo())
+                .addParameter("ssid", registerBean.getIdNo())
                 .addParameter("password", registerBean.getPassword())
+                .addParameter("openid", registerBean.getOpenID())
+                .addParameter("wechatType", "1")
                 .build();
         HttpResponse httpResponse = cHttpClient.execute(request, clientContext);
         String responseStr = EntityUtils.toString(httpResponse.getEntity());
@@ -61,26 +97,76 @@ public class HospitalRegisterService {
         return JSONBinder.binder(Map.class).fromJSON(responseStr);
     }
 
+//    public String resLockNumber(RegisterBean registerBean, HttpClientContext clientContext) throws Exception {
+////        logger.info("锁号中");
+//        Map params = new HashMap();
+//        params.put("orgId", 2);
+//        params.put("ssid", "600865500445500594400905502");
+//        params.put("idno", "500135400835500094400975500665400875500075400935500365");
+//        params.put("numberId", "503");
+//        params.put("scheduleId", "400965400905400905800077400984500284500494500186400855500005500148500035");
+//        params.put("startTime", "2018-12-12 14:54:00");
+//        HttpUriRequest request = RequestBuilder.post()
+//                .setUri("http://wechat.xmsmjk.com/wechatsehr/v1/webRegisterController/resLockNumber")
+//                .setHeader("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 5_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Mobile/9B176 MicroMessenger/4.3.2")
+////                .setHeader("Oid", registerBean.getOpenID())
+//                .addParameter("params", JSONBinder.binder(Map.class).toJSON((params)))
+//                .addParameter("iswchiss", "false").build();
+//        HttpResponse httpResponse = cHttpClient.execute(request, clientContext);
+//        String responseStr = EntityUtils.toString(httpResponse.getEntity());
+//        logger.info(responseStr);
+//        Map<String, Object> resultMap = JSONBinder.binder(Map.class).fromJSON(responseStr);
+//        Map<String, Object> dataMap = JSONBinder.binder(Map.class).fromJSON(resultMap.get("result").toString());
+//        Map<String, Object> msgMap = JSONBinder.binder(Map.class).fromJSON(JSONBinder.binder(Map.class).toJSON((Map) dataMap.get("RESULT")));
+//        request.abort();
+//        return msgMap.get("@MESSAGE").toString();
+//    }
+
+    public Map<String, Object> getSsid(RegisterBean registerBean, HttpClientContext clientContext) throws Exception {
+//        logger.info("登陆网站");
+        HttpUriRequest request = RequestBuilder.post()
+                .setUri("http://wechat.xmsmjk.com/wechatsehr/v1/userController/getSsid")
+                .setHeader("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 5_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Mobile/9B176 MicroMessenger/4.3.2")
+                .addParameter("openid", registerBean.getOpenID())
+                .build();
+        HttpResponse httpResponse = cHttpClient.execute(request, clientContext);
+//        Registry<CookieSpecProvider> registry = RegistryBuilder.<CookieSpecProvider>create().register(CookieSpecs.BEST_MATCH, new BestMatchSpecFactory())
+//                .register(CookieSpecs.BROWSER_COMPATIBILITY, new BrowserCompatSpecFactory()).build();
+//        clientContext.setCookieSpecRegistry(registry);
+//        clientContext.setCookieStore(setCookieStore(httpResponse, "wechat.xmsmjk.com"));
+        String responseStr = EntityUtils.toString(httpResponse.getEntity());
+        logger.info(responseStr);
+        request.abort();
+        Map<String, Object> resultMap = JSONBinder.binder(Map.class).fromJSON(responseStr);
+        Map<String, Object> dataMap = (Map) resultMap.get("result");
+        return dataMap;
+    }
+
     public String resLockNumber(RegisterBean registerBean, HttpClientContext clientContext) throws Exception {
 //        logger.info("锁号中");
+        Map params = new HashMap();
+        params.put("orgId", registerBean.getOrgId());
+        params.put("ssid", registerBean.getSsid());
+        params.put("idno", registerBean.getPatientID());
+        params.put("numberId", registerBean.getNumberId());
+        params.put("scheduleId", registerBean.getScheduleId());
+        params.put("startTime", registerBean.getStartTime());
         HttpUriRequest request = RequestBuilder.post()
-                .setUri("http://wechat.xmsmjk.com/zycapwxsehr/HospitalNoteController/ResLockNumber.do")
+                .setUri("http://wechat.xmsmjk.com/wechatsehr/v1/webRegisterController/resLockNumber")
                 .setHeader("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 5_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Mobile/9B176 MicroMessenger/4.3.2")
-                .setHeader("Oid", registerBean.getOpenID())
-                .addParameter("orgId", registerBean.getOrgId())
-                .addParameter("ssid", registerBean.getSsid())
-                .addParameter("idCard", registerBean.getPatientID())
-                .addParameter("numberId", registerBean.getNumberId())
-                .addParameter("scheduleId", registerBean.getScheduleId())
-                .addParameter("startTime", registerBean.getStartTime()).build();
+                .setHeader("openid", registerBean.getOpenID())
+                .setHeader("Host", "wechat.xmsmjk.com")
+                .setHeader("Referer", "http://wechat.xmsmjk.com/wechatsehr/wx/")
+                .addParameter("params", JSONBinder.binder(Map.class).toJSON((params)))
+                .addParameter("iswchiss", "false").build();
         HttpResponse httpResponse = cHttpClient.execute(request, clientContext);
         String responseStr = EntityUtils.toString(httpResponse.getEntity());
         logger.info(responseStr);
         Map<String, Object> resultMap = JSONBinder.binder(Map.class).fromJSON(responseStr);
-        Map<String, Object> dataMap = JSONBinder.binder(Map.class).fromJSON(resultMap.get("data").toString());
-        Map<String, Object> msgMap = JSONBinder.binder(Map.class).fromJSON(JSONBinder.binder(Map.class).toJSON((Map) dataMap.get("RESULT")));
+        Map<String, Object> dataMap = JSONBinder.binder(Map.class).fromJSON(resultMap.get("result").toString());
+        Map<String, Object> msgMap = JSONBinder.binder(Map.class).fromJSON(JSONBinder.binder(Map.class).toJSON((Map) dataMap.get("result")));
         request.abort();
-        return msgMap.get("@MESSAGE").toString();
+        return msgMap.get("@message").toString();
     }
 
     public String code(RegisterBean registerBean, HttpClientContext clientContext) throws Exception {
@@ -93,7 +179,7 @@ public class HospitalRegisterService {
                         .setHeader("Host", "wechat.xmsmjk.com")
                         .setHeader("Referer", "http://wechat.xmsmjk.com/zycapwxsehr/view/appointment/confirm.jsp")
                         .setHeader("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 5_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Mobile/9B176 MicroMessenger/4.3.2")
-                        .setHeader("Oid", registerBean.getOpenID())
+                        .setHeader("openid", registerBean.getOpenID())
                         .addParameter("openid", registerBean.getOpenID())
                         .build();
                 HttpResponse httpResponse = cHttpClient.execute(request, clientContext);
@@ -118,9 +204,11 @@ public class HospitalRegisterService {
         while (true) {
             try {
                 HttpUriRequest request = RequestBuilder.post()
-                        .setUri("http://wechat.xmsmjk.com/zycapwxsehr/HospitalNoteController/getSelectCode.do")
+                        .setUri("http://wechat.xmsmjk.com/wechatsehr/v1/webRegisterController/getSelectCode")
                         .setHeader("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 5_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Mobile/9B176 MicroMessenger/4.3.2")
-                        .setHeader("Oid", registerBean.getOpenID())
+                        .setHeader("openid", registerBean.getOpenID())
+                        .setHeader("Host", "wechat.xmsmjk.com")
+                        .setHeader("Referer", "http://wechat.xmsmjk.com/wechatsehr/wx/")
                         .addParameter("openid", registerBean.getOpenID())
                         .build();
                 HttpResponse httpResponse = cHttpClient.execute(request, clientContext);
@@ -137,7 +225,7 @@ public class HospitalRegisterService {
             }
 
         }
-        return resultMap.get("data").toString();
+        return resultMap.get("result").toString();
     }
 
     public InputStream drawImage(RegisterBean registerBean, HttpClientContext clientContext) throws Exception {
@@ -146,11 +234,13 @@ public class HospitalRegisterService {
         while (true) {
             try {
                 HttpUriRequest request = RequestBuilder.get()
-                        .setUri("http://wechat.xmsmjk.com/zycapwxsehr/DrawImage?openid=" + registerBean.getOpenID())
+                        .setUri("http://wechat.xmsmjk.com/wechatsehr/v1/DrawImage/getDrawImageCode")
                         .setHeader("Host", "wechat.xmsmjk.com")
-                        .setHeader("Referer", "http://wechat.xmsmjk.com/zycapwxsehr/view/appointment/confirm.jsp")
+                        .setHeader("Referer", "http://wechat.xmsmjk.com/wechatsehr/wx/")
                         .setHeader("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 5_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Mobile/9B176 MicroMessenger/4.3.2")
-                        .setHeader("Oid", registerBean.getOpenID())
+                        .setHeader("openid", registerBean.getOpenID())
+                        .addParameter("openid", registerBean.getOpenID())
+                        .addParameter("_", "0.4937472914841695")
                         .build();
                 HttpResponse httpResponse = cHttpClient.execute(request, clientContext);
                 inputStream = httpResponse.getEntity().getContent();
@@ -171,58 +261,65 @@ public class HospitalRegisterService {
 
     public String getRegister(RegisterBean registerBean, HttpClientContext clientContext) throws Exception {
 //        logger.info("预约中");
-        RequestBuilder requestBuilder = RequestBuilder.post()
-                .setUri("http://wechat.xmsmjk.com/zycapwxsehr/HospitalNoteController/getRegister.do")
+//        RequestBuilder requestBuilder = RequestBuilder.post()
+//                .setUri("http://wechat.xmsmjk.com/wechatsehr/v1/webRegisterController/webRegister")
+//                .setHeader("Host", "wechat.xmsmjk.com")
+////                .setHeader("Referer", "http://wechat.xmsmjk.com/zycapwxsehr/view/appointment/confirm.jsp")
+////                .setHeader("Oid", registerBean.getOpenID())
+//                .setHeader("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 5_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Mobile/9B176 MicroMessenger/4.3.2");
+        Map params = new HashMap();
+//        List<NameValuePair> list = new ArrayList<>();
+        params.put("orgCode", registerBean.getOrgCode());
+        params.put("deptCode", registerBean.getDeptCode());
+        params.put("docCode", registerBean.getDocCode());
+        params.put("sectionType", registerBean.getSectionType());
+        params.put("startTime", registerBean.getStartTime());
+        params.put("ssid", registerBean.getSsid());
+        params.put("patientName", registerBean.getPatientName());
+        params.put("patientID", registerBean.getPatientID());
+        params.put("patientPhone", registerBean.getPatientPhone());
+        params.put("patientSex", registerBean.getPatientSex());
+        params.put("orgName", registerBean.getOrgName());
+        params.put("openid", registerBean.getOpenID());
+        params.put("deptName", registerBean.getDeptName());
+        params.put("doctorName", registerBean.getDoctorName());
+        params.put("telPhone", registerBean.getTelPhone());
+        params.put("seq", registerBean.getSeq());
+        params.put("state", registerBean.getState());
+        params.put("iptCode", registerBean.getIptCode());
+        params.put("timeCode", registerBean.getTimeCode());
+        System.out.println(registerBean.getIptCode());
+        String s = new String(JSONBinder.binder(Map.class).toJSON((params)).getBytes(), "GBK");
+        HttpUriRequest request = RequestBuilder.post().setUri("http://wechat.xmsmjk.com/wechatsehr/v1/webRegisterController/webRegister")
                 .setHeader("Host", "wechat.xmsmjk.com")
-                .setHeader("Referer", "http://wechat.xmsmjk.com/zycapwxsehr/view/appointment/confirm.jsp")
-                .setHeader("Oid", registerBean.getOpenID())
-                .setHeader("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 5_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Mobile/9B176 MicroMessenger/4.3.2");
-        List<NameValuePair> list = new ArrayList<>();
-        list.add(new BasicNameValuePair("orgCode", registerBean.getOrgCode()));
-        list.add(new BasicNameValuePair("deptCode", registerBean.getDeptCode()));
-        list.add(new BasicNameValuePair("docCode", registerBean.getDocCode()));
-        list.add(new BasicNameValuePair("sectionType", registerBean.getSectionType()));
-        list.add(new BasicNameValuePair("startTime", registerBean.getStartTime()));
-        list.add(new BasicNameValuePair("ssid", registerBean.getSsid()));
-        list.add(new BasicNameValuePair("patientName", registerBean.getPatientName()));
-        list.add(new BasicNameValuePair("patientID", registerBean.getPatientID()));
-        list.add(new BasicNameValuePair("patientPhone", registerBean.getPatientPhone()));
-        list.add(new BasicNameValuePair("patientSex", registerBean.getPatientSex()));
-        list.add(new BasicNameValuePair("orgName", registerBean.getOrgName()));
-        list.add(new BasicNameValuePair("openID", registerBean.getOpenID()));
-        list.add(new BasicNameValuePair("deptName", registerBean.getDeptName()));
-        list.add(new BasicNameValuePair("doctorName", registerBean.getDoctorName()));
-        list.add(new BasicNameValuePair("seq", registerBean.getSeq()));
-        list.add(new BasicNameValuePair("state", registerBean.getState()));
-        list.add(new BasicNameValuePair("iptCode", registerBean.getIptCode()));
-        list.add(new BasicNameValuePair("timeCode", registerBean.getTimeCode()));
-        UrlEncodedFormEntity uefEntity = new UrlEncodedFormEntity(list, "UTF-8");
-        HttpUriRequest request = requestBuilder.setEntity(uefEntity).build();
+                .setHeader("Referer", "http://wechat.xmsmjk.com/wechatsehr/wx/")
+                .setHeader("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 5_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Mobile/9B176 MicroMessenger/4.3.2")
+                .setHeader("openid", registerBean.getOpenID())
+                .setCharset(Charset.forName("GBK"))
+                .addParameter("params", s).build();
         HttpResponse httpResponse = cHttpClient.execute(request, clientContext);
         String responseStr = EntityUtils.toString(httpResponse.getEntity());
-//        logger.info(responseStr);
+        logger.info(responseStr);
         Map<String, Object> resultMap = JSONBinder.binder(Map.class).fromJSON(responseStr);
         request.abort();
-        return resultMap.get("data").toString();
+        return resultMap.get("result").toString();
     }
 
     public List<Map<String, Object>> reservationList(RegisterBean registerBean, HttpClientContext clientContext) throws Exception {
-        StringBuilder url = new StringBuilder("http://wechat.xmsmjk.com/zycapwxsehr/ReservationLogController/detailtData.do");
-        url.append("?orgid=").append(registerBean.getOrgCode());
-        url.append("&deptid=").append(registerBean.getDeptCode());
-        url.append("&docid=").append(registerBean.getDocCode());
-        url.append("&strStart=").append(registerBean.getStartDate());
-        url.append("&strEnd=").append(registerBean.getEndDate());
+        StringBuilder url = new StringBuilder("http://wechat.xmsmjk.com/wechatsehr/v1/doctorController/GetRegDeptDoctorSectionList");
+        url.append("?orgCode=").append(registerBean.getOrgCode());
+        url.append("&deptCode=").append(registerBean.getDeptCode());
+        url.append("&docCode=").append(registerBean.getDocCode());
+        url.append("&date=").append(registerBean.getStartDate());
         HttpUriRequest request = RequestBuilder.get()
                 .setUri(url.toString())
                 .setHeader("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 5_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Mobile/9B176 MicroMessenger/4.3.2")
-                .setHeader("Oid", registerBean.getOpenID())
                 .build();
         HttpResponse httpResponse = cHttpClient.execute(request, clientContext);
         String responseStr = EntityUtils.toString(httpResponse.getEntity());
         Map<String, Object> map = JSONBinder.binder(Map.class).fromJSON(responseStr);
-        if (!"null".equals(map.get("data").toString())) {
-            Map<String, Object> dataMap = JSONBinder.binder(Map.class).fromJSON(map.get("data").toString());
+        if (!"null".equals(map.get("result").toString())) {
+            Map<String, Object> dataMap = JSONBinder.binder(Map.class).fromJSON(map.get("result").toString());
             Map<String, Object> doctorMap = JSONBinder.binder(Map.class).fromJSON(JSONBinder.binder(Map.class).toJSON((Map) dataMap.get("doctor")));
             List<Map<String, Object>> sectionList = null;
             if (doctorMap.get("date") instanceof Map) {
@@ -240,16 +337,14 @@ public class HospitalRegisterService {
     }
 
     public Map<String, Object> reservationListAll(RegisterBean registerBean) throws Exception {
-        StringBuilder url = new StringBuilder("http://wechat.xmsmjk.com/zycapwxsehr/ReservationLogController/detailtData.do");
-        url.append("?orgid=").append(registerBean.getOrgCode());
-        url.append("&deptid=").append(registerBean.getDeptCode());
-        url.append("&docid=").append(registerBean.getDocCode());
-        url.append("&strStart=").append(registerBean.getStartDate());
-        url.append("&strEnd=").append(registerBean.getEndDate());
+        StringBuilder url = new StringBuilder("http://wechat.xmsmjk.com/wechatsehr/v1/doctorController/GetRegDeptDoctorSectionList");
+        url.append("?orgCode=").append(registerBean.getOrgCode());
+        url.append("&deptCode=").append(registerBean.getDeptCode());
+        url.append("&docCode=").append(registerBean.getDocCode());
+        url.append("&date=").append(registerBean.getStartDate());
         HttpUriRequest request = RequestBuilder.get()
                 .setUri(url.toString())
                 .setHeader("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 5_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Mobile/9B176 MicroMessenger/4.3.2")
-                .setHeader("Oid", registerBean.getOpenID())
                 .build();
         HttpResponse httpResponse = cHttpClient.execute(request);
         String responseStr = EntityUtils.toString(httpResponse.getEntity());
@@ -267,18 +362,24 @@ public class HospitalRegisterService {
         }
         do {
             logger.info("获取验证码");
-//        code(registerBean, clientContext);
+//            code(registerBean, clientContext);
             InputStream inputStream = drawImage(registerBean, clientContext);
             String wordArray = getSelectCode(registerBean, clientContext);
-            String iptCode = ImageCode.imageToWord(wordArray, registerBean.getIdNo(), inputStream);
+            String iptCode = "取验证码";
+            try {
+                iptCode = ImageCode.imageToWord(wordArray, registerBean.getIdNo(), inputStream);
+            } catch (Exception e) {
+                System.out.println("图片切割异常");
+
+            }
             inputStream.close();
             registerBean.setIptCode(iptCode);
             msg = getRegister(registerBean, clientContext);
-        } while ("验证码错误,请重新输入".equals(msg));
+        } while ("error:请重新输入验证码".equals(msg));
 //        if ("验证码错误,请重新输入".equals(msg)) {
-//        InputStream inputStream2 = drawImage(registerBean, clientContext);
-//        ImageIO.write(ImageIO.read(inputStream2), "png", new File("D:\\code\\" + registerBean.getOpenID() + registerBean.getIptCode() + System.currentTimeMillis() + ".png"));
-//        inputStream2.close();
+//            InputStream inputStream2 = drawImage(registerBean, clientContext);
+//            ImageIO.write(ImageIO.read(inputStream2), "png", new File("D:\\code\\" + registerBean.getOpenID() + registerBean.getIptCode() + System.currentTimeMillis() + ".png"));
+//            inputStream2.close();
 //        }
         return msg;
 
@@ -294,11 +395,17 @@ public class HospitalRegisterService {
 //            code(registerBean, clientContext);
             InputStream inputStream = drawImage(registerBean, clientContext);
             String wordArray = getSelectCode(registerBean, clientContext);
-            String iptCode = ImageCode.imageToWord(wordArray, registerBean.getIdNo(), inputStream);
+            String iptCode = "取验证码";
+            try {
+                iptCode = ImageCode.imageToWord(wordArray, registerBean.getIdNo(), inputStream);
+            } catch (Exception e) {
+                System.out.println("图片切割异常");
+
+            }
             inputStream.close();
             registerBean.setIptCode(iptCode);
             msg = getRegister(registerBean, clientContext);
-        } while ("验证码错误,请重新输入".equals(msg));
+        } while ("error:请重新输入验证码".equals(msg));
 //        if ("验证码错误,请重新输入".equals(msg)) {
 //            InputStream inputStream2 = drawImage(registerBean, clientContext);
 //            ImageIO.write(ImageIO.read(inputStream2), "png", new File("D:\\code\\" + registerBean.getOpenID() + registerBean.getIptCode() + System.currentTimeMillis() + ".png"));
@@ -308,43 +415,56 @@ public class HospitalRegisterService {
 
     }
 
-
     public void testDo() throws Exception {
+
+//        params.put("orgId", 2);
+//        params.put("ssid", "600865500445500594400905502");
+//        params.put("idno", "500135400835500094400975500665400875500075400935500365");
+//        params.put("numberId", "503");
+//        params.put("scheduleId", "400965400905400905800077400984500284500494500186400855500005500148500035");
+//        params.put("startTime", "2018-12-12 14:54:00");
+//        params.put("orgId", registerBean.getOrgId());
+//        params.put("ssid", registerBean.getSsid());
+//        params.put("idno", registerBean.getPatientID());
+//        params.put("numberId", registerBean.getNumberId());
+//        params.put("scheduleId", registerBean.getScheduleId());
+//        params.put("startTime", registerBean.getStartTime());
         HttpClientContext clientContext = HttpClientContext.create();
         RegisterBean registerBean = new RegisterBean();
         registerBean.setOrgCode("350211G1001");
-        registerBean.setDeptCode("320");
-        registerBean.setDocCode("040");
+        registerBean.setDeptCode("1040613");
+        registerBean.setDocCode("75532");
         registerBean.setSectionType("PM ");
-        registerBean.setStartTime("2016-11-14 14:48:00");
+        registerBean.setStartTime("2018-12-12 14:54:00");
         registerBean.setSsid("600865500445500594400905502");
         registerBean.setPatientName("许少军");
         registerBean.setPatientID("500135400835500094400975500665400875500075400935500365");
         registerBean.setPatientPhone("400935500594400845500484500035505");
-        registerBean.setPatientSex("男");
-        registerBean.setOrgName("厦门市妇幼保健院");
-        registerBean.setOpenID("oYNMFt49BHWpGRDCzqmtJg_vrfXg");
-        registerBean.setDeptName("宫颈疾病门诊");
-        registerBean.setDoctorName("吴冬梅");
-        registerBean.setSeq("201609181436");
+        registerBean.setTelPhone("400935500594400845500484500035505");
+        registerBean.setPatientSex("女");
+        registerBean.setOrgName("厦门大学附属第一医院");
+        registerBean.setDeptName("小儿呼吸哮喘门诊");
+        registerBean.setDoctorName("张宁");
+        registerBean.setSeq("201812052334");
         registerBean.setState("124");
         registerBean.setIptCode("");
-        registerBean.setNumberId("704020161114PM1448");
-        registerBean.setScheduleId("704020161114PM");
+        registerBean.setNumberId("503");
+        registerBean.setScheduleId("400965400905400905800077400984500284500494500186400855500005500148500035");
         registerBean.setIdNo("D86671124");
-        registerBean.setOrgId("7");
+        registerBean.setOrgId("2");
         registerBean.setPassword("350521198809291558");
-        registerBean.setStartDate("2016-11-14");
-        registerBean.setEndDate("2016-11-14");
-        registerBean.setTimeCode("Y0jIsj2MxwLlFBpWfuYW7cU+8Oos3GuXLkg5phAMjDrBDgdvH5YLCKnFIWpeShXJ");
-        index(registerBean, clientContext);
-        Map<String, Object> resultMap = login(registerBean, clientContext);
-        registerBean.setSsid(resultMap.get("patientSsid").toString());
-        registerBean.setPatientID(resultMap.get("patientID").toString());
-        registerBean.setPatientPhone(resultMap.get("patientPhone").toString());
+        registerBean.setStartDate("2018-12-12");
+        registerBean.setEndDate("2018-12-12");
+        registerBean.setTimeCode("wRKSYUdjG/DhFulZfyRYeifOqks1aYLGnx1icyxATWe8BQxw87RMTiUIpPUbhTB8");
+        registerBean.setOpenID("WGdtWmhFS0Y5MndGemE2L2tHU2dUMm5nSEZOdVVJbTJoTzN6ZjBjK1U4SVRIaWhqTGtSc0J1am55c1dxNzZZUQ==");
+//        index(registerBean, clientContext);
+//        Map<String, Object> resultMap = login(registerBean, clientContext);
+//        registerBean.setSsid(resultMap.get("patientSsid").toString());
+//        registerBean.setPatientID(resultMap.get("patientID").toString());
+//        registerBean.setPatientPhone(resultMap.get("patientPhone").toString());
         while (true) {
             String msg = handDoRegister(registerBean, clientContext);
-            if (!"验证码错误,请重新输入".equals(msg)) {
+            if (!"error:请重新输入验证码".equals(msg)) {
                 break;
             }
 
