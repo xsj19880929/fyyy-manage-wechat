@@ -97,7 +97,7 @@ public class ImageCode {
     }
 
     public static String imageToWord(String wordArray, String folder, InputStream inputStream) throws Exception {
-        String path = "D:\\imagecode\\" + folder;
+        String path = "F:\\imagecode\\" + folder;
         File file = new File(path);
         if (!file.exists()) {
             file.mkdirs();
@@ -159,7 +159,7 @@ public class ImageCode {
                 }
             }
         }
-        ImageIO.write(img, "png", new File("D:\\验证码\\spit\\" + System.currentTimeMillis() + ".png"));
+        ImageIO.write(img, "png", new File("F:\\验证码\\spit\\" + System.currentTimeMillis() + ".png"));
         return img;
     }
 
